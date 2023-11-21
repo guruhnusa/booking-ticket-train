@@ -30,16 +30,26 @@ class TicketBookingApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        tk.Label(self.root, text="Username:").grid(row=0, column=0, padx=10, pady=10)
-        self.username_entry = tk.Entry(self.root)
-        self.username_entry.grid(row=0, column=1, padx=10, pady=10)
+        login_frame = tk.Frame(self.root, padx=20, pady=20)
+        login_frame.grid(row=0, column=0, padx=50, pady=50)
 
-        tk.Label(self.root, text="Password:").grid(row=1, column=0, padx=10, pady=10)
-        self.password_entry = tk.Entry(self.root, show="*")
-        self.password_entry.grid(row=1, column=1, padx=10, pady=10)
+        tk.Label(login_frame, text="Selamat Datang!", font=("Helvetica", 16)).grid(row=0, column=0, columnspan=2, pady=10)
 
-        tk.Button(self.root, text="Login", command=self.login).grid(row=2, column=0, pady=10)
-        tk.Button(self.root, text="Daftar", command=self.buka_halaman_daftar).grid(row=2, column=1, pady=10)
+        tk.Label(login_frame, text="Username:").grid(row=1, column=0, pady=5, sticky="e")
+        self.username_entry = tk.Entry(login_frame, width=20)
+        self.username_entry.grid(row=1, column=1, pady=5)
+
+        tk.Label(login_frame, text="Password:").grid(row=2, column=0, pady=5, sticky="e")
+        self.password_entry = tk.Entry(login_frame, show="*", width=20)
+        self.password_entry.grid(row=2, column=1, pady=5)
+
+        login_button = tk.Button(login_frame, text="Login", command=self.login, width=15)
+        login_button.grid(row=3, column=0, columnspan=2, pady=10)
+
+        register_button = tk.Button(login_frame, text="Daftar", command=self.buka_halaman_daftar, width=15)
+        register_button.grid(row=4, column=0, columnspan=2, pady=5)
+
+        # You can add more styling or customization as needed
 
         
     def login(self):
@@ -58,15 +68,21 @@ class TicketBookingApp:
         jendela_daftar = tk.Toplevel(self.root)
         jendela_daftar.title("Pendaftaran")
 
-        tk.Label(jendela_daftar, text="Username:").grid(row=0, column=0, padx=10, pady=10)
-        username_entry = tk.Entry(jendela_daftar)
-        username_entry.grid(row=0, column=1, padx=10, pady=10)
+        daftar_frame = tk.Frame(jendela_daftar, padx=20, pady=20)
+        daftar_frame.grid(row=0, column=0, padx=50, pady=50)
 
-        tk.Label(jendela_daftar, text="Password:").grid(row=1, column=0, padx=10, pady=10)
-        password_entry = tk.Entry(jendela_daftar, show="*")
-        password_entry.grid(row=1, column=1, padx=10, pady=10)
+        tk.Label(daftar_frame, text="Pendaftaran Akun", font=("Helvetica", 16)).grid(row=0, column=0, columnspan=2, pady=10)
 
-        tk.Button(jendela_daftar, text="Daftar", command=lambda: self.daftar(jendela_daftar, username_entry.get(), password_entry.get())).grid(row=2, column=0, columnspan=2, pady=10)
+        tk.Label(daftar_frame, text="Username:").grid(row=1, column=0, pady=5, sticky="e")
+        username_entry = tk.Entry(daftar_frame, width=20)
+        username_entry.grid(row=1, column=1, pady=5)
+
+        tk.Label(daftar_frame, text="Password:").grid(row=2, column=0, pady=5, sticky="e")
+        password_entry = tk.Entry(daftar_frame, show="*", width=20)
+        password_entry.grid(row=2, column=1, pady=5)
+
+        daftar_button = tk.Button(daftar_frame, text="Daftar", command=lambda: self.daftar(jendela_daftar, username_entry.get(), password_entry.get()), width=15)
+        daftar_button.grid(row=3, column=0, columnspan=2, pady=10)
 
     def daftar(self, jendela_daftar, username, password):
         if not username or not password:
