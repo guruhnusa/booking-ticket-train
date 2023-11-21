@@ -6,18 +6,93 @@ from PIL import Image, ImageTk
 import numpy as np
 from models.stasiun import Stasiun
 from models.kereta import Kereta
+from models.user import User, UserManager 
 
 class TicketBookingApp: 
     def __init__(self, root):
         self.root = root
-        self.root.title("Pemesanan Tiket Kereta")
-        self.tampilkan_halaman_pemesanan()
+        self.user_manager = UserManager()
+        self.user_manager.load_from_csv()
         self.kursi_terpilih = [] 
         self.nama_penumpang_list = []
-        self.tanggal_pesanan_var = tk.StringVar()
+        self.tanggal_pesanan_var = None
         self.tanggal_pesanan = ""
 
+        # Create the Tkinter root window
+        self.root.title("Pemesanan Tiket Kereta")
+        self.tampilkan_welcome_screen()
+    
+    def tampilkan_welcome_screen(self):
+        tk.Label(self.root, text="Selamat Datang di Aplikasi Pemesanan Tiket Kereta", font=("Helvetica", 16)).grid(row=0, column=0, columnspan=2, padx=10, pady=10)
+        tk.Button(self.root, text="Start", command=self.tampilkan_halaman_login).grid(row=1, column=0, columnspan=2, pady=10)
+    
+    def tampilkan_halaman_login(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        tk.Label(self.root, text="Username:").grid(row=0, column=0, padx=10, pady=10)
+        self.username_entry = tk.Entry(self.root)
+        self.username_entry.grid(row=0, column=1, padx=10, pady=10)
+
+        tk.Label(self.root, text="Password:").grid(row=1, column=0, padx=10, pady=10)
+        self.password_entry = tk.Entry(self.root, show="*")
+        self.password_entry.grid(row=1, column=1, padx=10, pady=10)
+
+        tk.Button(self.root, text="Login", command=self.login).grid(row=2, column=0, pady=10)
+        tk.Button(self.root, text="Daftar", command=self.buka_halaman_daftar).grid(row=2, column=1, pady=10)
+
+        
+    def login(self):
+        
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+
+        if self.user_manager.check_credentials(username, password):
+            self.tampilkan_halaman_pemesanan()
+        else:
+            messagebox.showwarning("Login Gagal", "Username atau password salah. Silakan coba lagi.")
+            
+
+    def buka_halaman_daftar(self):
+        # Create a new window for registration
+        jendela_daftar = tk.Toplevel(self.root)
+        jendela_daftar.title("Pendaftaran")
+
+        tk.Label(jendela_daftar, text="Username:").grid(row=0, column=0, padx=10, pady=10)
+        username_entry = tk.Entry(jendela_daftar)
+        username_entry.grid(row=0, column=1, padx=10, pady=10)
+
+        tk.Label(jendela_daftar, text="Password:").grid(row=1, column=0, padx=10, pady=10)
+        password_entry = tk.Entry(jendela_daftar, show="*")
+        password_entry.grid(row=1, column=1, padx=10, pady=10)
+
+        tk.Button(jendela_daftar, text="Daftar", command=lambda: self.daftar(jendela_daftar, username_entry.get(), password_entry.get())).grid(row=2, column=0, columnspan=2, pady=10)
+
+    def daftar(self, jendela_daftar, username, password):
+        if not username or not password:
+            messagebox.showwarning("Peringatan", "Mohon isi semua kolom.")
+            return
+
+        # Check if the username already exists
+        for user in self.user_manager.users:
+            if user.username == username:
+                messagebox.showwarning("Peringatan", "Username sudah digunakan. Silakan pilih username lain.")
+                return
+
+        # Register the new user
+        new_user = User(username, password)
+        self.user_manager.register_user(new_user)
+
+        messagebox.showinfo("Pendaftaran Berhasil", "Akun berhasil didaftarkan. Silakan login.")
+        # Close the registration window
+        jendela_daftar.destroy()
+
+        # Open the login window
+        self.tampilkan_halaman_login()
+    
     def tampilkan_halaman_pemesanan(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
         # List objek Stasiun
         self.stasiun_list = [
             Stasiun("Gambir", "Jakarta"),
@@ -53,6 +128,8 @@ class TicketBookingApp:
 
         # Tombol Pemesanan
         tk.Button(self.root, text="Pesan Tiket", command=self.buka_halaman_kereta).grid(row=4, column=0, columnspan=2, pady=10)
+
+
 
     def buka_halaman_kereta(self):
         stasiun_awal = self.stasiun_awal_var.get()

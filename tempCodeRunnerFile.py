@@ -1,5 +1,3 @@
-from models.ticket_booking_app import TicketBookingApp
-import tkinter as tk
 
 def main():
     root = tk.Tk()
