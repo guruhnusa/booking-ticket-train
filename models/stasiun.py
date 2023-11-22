@@ -1,4 +1,4 @@
 class Stasiun:
-    def __init__(self, nama, kota):
-        self.nama = nama
-        self.kota = kota
+    def __init__(self, awal, tujuan):
+        self.awal = awal
+        self.tujuan = tujuan

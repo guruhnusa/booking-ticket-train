@@ -33,7 +33,7 @@ class TicketBookingApp:
         login_frame = tk.Frame(self.root, padx=20, pady=20)
         login_frame.grid(row=0, column=0, padx=50, pady=50)
 
-        tk.Label(login_frame, text="Selamat Datang!", font=("Helvetica", 16)).grid(row=0, column=0, columnspan=2, pady=10)
+        tk.Label(login_frame, text="Selamat Datang! Di Aplikasi Ticket Kereta", font=("Helvetica", 16)).grid(row=0, column=0, columnspan=2, pady=10)
 
         tk.Label(login_frame, text="Username:").grid(row=1, column=0, pady=5, sticky="e")
         self.username_entry = tk.Entry(login_frame, width=20)
@@ -111,9 +111,9 @@ class TicketBookingApp:
             widget.destroy()
         # List objek Stasiun
         self.stasiun_list = [
-            Stasiun("Gambir", "Jakarta"),
-            Stasiun("Bandung", "Bandung"),
-            Stasiun("Surabaya", "Surabaya"),
+            Stasiun("Gambir", "Solo"),
+            Stasiun("Bandung", "Malang"),
+            Stasiun("Jakarta", "Surabaya"),
         ]
 
         # Variabel String untuk menyimpan stasiun awal dan tujuan
@@ -125,12 +125,12 @@ class TicketBookingApp:
 
         # Label dan OptionMenu untuk Stasiun Awal
         tk.Label(self.root, text="Stasiun Awal:").grid(row=0, column=0, padx=10, pady=10)
-        stasiun_awal_options = [stasiun.nama for stasiun in self.stasiun_list]
+        stasiun_awal_options = [stasiun.awal for stasiun in self.stasiun_list]
         tk.OptionMenu(self.root, self.stasiun_awal_var, *stasiun_awal_options).grid(row=0, column=1, padx=10, pady=10)
 
         # Label dan OptionMenu untuk Stasiun Tujuan
         tk.Label(self.root, text="Stasiun Tujuan:").grid(row=1, column=0, padx=10, pady=10)
-        stasiun_tujuan_options = [stasiun.nama for stasiun in self.stasiun_list]
+        stasiun_tujuan_options = [stasiun.tujuan for stasiun in self.stasiun_list]
         tk.OptionMenu(self.root, self.stasiun_tujuan_var, *stasiun_tujuan_options).grid(row=1, column=1, padx=10, pady=10)
 
         # Label dan DateEntry untuk Tanggal
@@ -192,12 +192,14 @@ class TicketBookingApp:
         jendela_kereta.title("Pemilihan Kereta")
 
         # List objek Kereta
+        # List objek Kereta
         self.kereta_list = [
-            Kereta("Argo Bromo", "08:00", "12:00", 40, 200000),
-            Kereta("Gajayana", "10:00", "14:00", 42, 150000),
-            Kereta("Majapahit", "12:00", "16:00", 44, 100000),
+            Kereta("Argo Bromo", "08:00", "12:00", 40, 200000, stasiun_awal, stasiun_tujuan),
+            Kereta("Gajayana", "10:00", "14:00", 42, 150000, stasiun_awal, stasiun_tujuan),
+            Kereta("Majapahit", "12:00", "16:00", 44, 100000, stasiun_awal, stasiun_tujuan),
             # Tambahkan kereta lain sesuai kebutuhan
         ]
+
 
         # Variabel untuk menyimpan pilihan kereta
         self.pilihan_kereta_var = tk.StringVar(value=self.kereta_list[0].nama)
@@ -214,7 +216,7 @@ class TicketBookingApp:
         jendela_kereta.mainloop()
 
     def buka_halaman_kursi(self, jendela_kereta):
-        jendela_kereta.destroy()
+
         kereta_terpilih = next((kereta for kereta in self.kereta_list if kereta.nama == self.pilihan_kereta_var.get()), None)
 
         # Membuat jendela baru untuk halaman pemilihan kursi
@@ -225,19 +227,20 @@ class TicketBookingApp:
         self.kursi_terpilih_vars = []
 
         # Fungsi yang dipanggil saat tombol kursi ditekan
-        def on_kursi_button_click(index):
-            var = self.kursi_terpilih_vars[index]
-            button_kursi = buttons[index]
+        def on_kursi_button_click(row, col):
+            var = self.kursi_terpilih_vars[row][col]
+            button_kursi = buttons[row][col]
 
             # Check if the user has already selected the maximum number of seats
             max_seats = int(self.jumlah_penumpang_var.get())
-            selected_seats = sum(1 for var in self.kursi_terpilih_vars if var.get() == "1")
+            selected_seats = sum(1 for row in self.kursi_terpilih_vars for var in row if var.get() == "1")
 
             if selected_seats == max_seats:
                 # Allow changing the selected seat
                 if var.get() == "1":
                     button_kursi.configure(bg="SystemButtonFace")
                     var.set("0")
+                    kereta_terpilih.kursi_terpilih.discard(f"{chr(65 + row)}{col + 1}")  # Remove the seat from the set
                 else:
                     messagebox.showwarning("Peringatan", "Anda sudah memilih semua kursi yang diperlukan.")
             else:
@@ -245,9 +248,11 @@ class TicketBookingApp:
                 if var.get() == "0":
                     button_kursi.configure(bg="red")
                     var.set("1")
+                    kereta_terpilih.kursi_terpilih.add(f"{chr(65 + row)}{col + 1}")  # Add the seat to the set
                 else:
                     button_kursi.configure(bg="SystemButtonFace")
                     var.set("0")
+                    kereta_terpilih.kursi_terpilih.discard(f"{chr(65 + row)}{col + 1}")  # Remove the seat from the set
 
         # Menampilkan tabel kursi beserta button
         num_rows = kereta_terpilih.jumlah_kursi // 4
@@ -256,16 +261,19 @@ class TicketBookingApp:
         buttons = []
 
         for i in range(num_rows):
+            row_vars = []
+            row_buttons = []
             for j in range(num_columns):
-                seat_label = chr(65 + i) + str(j + 1)
-                if seat_label == 'A2':
-                    seat_label = 'A2 '  # Add space for A2
+                seat_label = f"{chr(65 + i)}{j + 1}"
                 var = tk.StringVar(value="0")
-                self.kursi_terpilih_vars.append(var)
+                row_vars.append(var)
 
-                button_kursi = tk.Button(jendela_kursi, text=f"{seat_label}", command=lambda i=i, j=j: on_kursi_button_click(i * num_columns + j))
+                button_kursi = tk.Button(jendela_kursi, text=f"{seat_label}", command=lambda i=i, j=j: on_kursi_button_click(i, j))
                 button_kursi.grid(row=i, column=j, padx=10, pady=10)
-                buttons.append(button_kursi)
+                row_buttons.append(button_kursi)
+
+            self.kursi_terpilih_vars.append(row_vars)
+            buttons.append(row_buttons)
 
         tk.Button(jendela_kursi, text="Masukan Data Penumpang", command=lambda: self.buka_halaman_data_penumpang(jendela_kursi, kereta_terpilih)).grid(row=num_rows, column=0, columnspan=num_columns, pady=10)
 
@@ -301,19 +309,23 @@ class TicketBookingApp:
         # Menampilkan data pesanan
         tk.Label(jendela_data_pesanan, text=f"Tanggal: {self.tanggal_pesanan}").grid(row=0, column=0, padx=10, pady=10)
         tk.Label(jendela_data_pesanan, text=f"Kereta: {kereta_terpilih.nama}").grid(row=1, column=0, padx=10, pady=10)
-       
+        tk.Label(jendela_data_pesanan, text=f"Jam Berangkat: {kereta_terpilih.jam_berangkat}").grid(row=2, column=0, padx=10, pady=10)
+        tk.Label(jendela_data_pesanan, text=f"Jam Tiba: {kereta_terpilih.jam_tiba}").grid(row=3, column=0, padx=10, pady=10)
+        tk.Label(jendela_data_pesanan, text=f"Stasiun Awal: {kereta_terpilih.stasiun_awal}").grid(row=4, column=0, padx=10, pady=10)
+        tk.Label(jendela_data_pesanan, text=f"Stasiun Tujuan: {kereta_terpilih.stasiun_tujuan}").grid(row=5, column=0, padx=10, pady=10)
 
         # Menampilkan nama-nama penumpang
         for i, nama in enumerate(data_penumpang):
-            tk.Label(jendela_data_pesanan, text=f"Nama Penumpang {i + 1}: {nama}").grid(row=i + 2, column=0, padx=10, pady=10)
+            tk.Label(jendela_data_pesanan, text=f"Nama Penumpang {i + 1}: {nama}").grid(row=i + 6, column=0, padx=10, pady=10)
 
         total_harga = kereta_terpilih.harga * len(data_penumpang)
-        tk.Label(jendela_data_pesanan, text=f"Total Harga: {total_harga}").grid(row=len(data_penumpang) + 2, column=0, padx=10, pady=10)
+        tk.Label(jendela_data_pesanan, text=f"Total Harga: {total_harga}").grid(row=len(data_penumpang) + 6, column=0, padx=10, pady=10)
 
         # Tombol untuk membuka halaman pembayaran
-        tk.Button(jendela_data_pesanan, text="Pembayaran", command=lambda: self.konfirmasi_pembayaran(jendela_data_pesanan, kereta_terpilih, data_penumpang, total_harga)).grid(row=len(data_penumpang) + 3, column=0, padx=10, pady=10)
+        tk.Button(jendela_data_pesanan, text="Pembayaran", command=lambda: self.konfirmasi_pembayaran(jendela_data_pesanan, kereta_terpilih, data_penumpang, total_harga)).grid(row=len(data_penumpang) + 7, column=0, padx=10, pady=10)
 
         jendela_data_pesanan.mainloop()
+
 
     def konfirmasi_pesanan(self, jendela_kursi, kereta_terpilih):
         jendela_kursi.destroy()
@@ -328,10 +340,8 @@ class TicketBookingApp:
         jendela_pembayaran.title("Pembayaran")
 
         # Menampilkan informasi pembayaran
-        # Menampilkan informasi pembayaran
         tk.Label(jendela_pembayaran, text=f"Total Harga: {total_harga}", font=("Helvetica", 12)).pack(padx=10, pady=10)
         tk.Label(jendela_pembayaran, text="Scan Kode QR ini", font=("Helvetica", 12)).pack(padx=10, pady=10)
-
 
         # Generate QR code for the total price
         qr = qrcode.QRCode(
@@ -352,9 +362,28 @@ class TicketBookingApp:
         # Display the QR code
         tk.Label(jendela_pembayaran, image=tk_image).pack(padx=10, pady=10)
 
-        tk.Button(jendela_pembayaran, text="Selesai", command=lambda: self.selesai_pembayaran()).pack(padx=10, pady=10)
+        # Button to show the ticket information
+        tk.Button(jendela_pembayaran, text="Selesai", command=lambda: self.tampilkan_tiket(kereta_terpilih, data_penumpang, total_harga)).pack(padx=10, pady=10)
+
         jendela_pembayaran.mainloop()
-    
-    def selesai_pembayaran(self):
-        tk.messagebox.showinfo("Terima Kasih", "Terima kasih telah menggunakan layanan kami!")
-        self.root.destroy()  # Close the main window after showing the message
+
+    def tampilkan_tiket(self, kereta_terpilih, data_penumpang, total_harga):
+        # Membuat jendela baru untuk menampilkan tiket
+        jendela_tiket = tk.Toplevel()
+        jendela_tiket.title("Tiket")
+
+        # Menampilkan informasi tiket dengan gaya yang lebih menarik
+        tk.Label(jendela_tiket, text="Informasi Tiket", font=("Helvetica", 16), fg="blue").pack(padx=10, pady=10)
+        tk.Label(jendela_tiket, text=f"Kereta: {kereta_terpilih.nama}", font=("Helvetica", 12)).pack(padx=10, pady=5)
+        tk.Label(jendela_tiket, text=f"Stasiun Awal: {kereta_terpilih.stasiun_awal}", font=("Helvetica", 12)).pack(padx=10, pady=5)
+        tk.Label(jendela_tiket, text=f"Stasiun Tujuan: {kereta_terpilih.stasiun_tujuan}", font=("Helvetica", 12)).pack(padx=10, pady=5)
+        tk.Label(jendela_tiket, text=f"Jam Berangkat: {kereta_terpilih.jam_berangkat}", font=("Helvetica", 12)).pack(padx=10, pady=5)
+        tk.Label(jendela_tiket, text=f"Jam Tiba: {kereta_terpilih.jam_tiba}", font=("Helvetica", 12)).pack(padx=10, pady=5)
+
+        # Menampilkan nama-nama penumpang dengan gaya yang lebih menarik
+        for i, nama in enumerate(data_penumpang):
+            tk.Label(jendela_tiket, text=f"Nama Penumpang {i + 1}: {nama}", font=("Helvetica", 12), fg="green").pack(padx=10, pady=5)
+        # Menampilkan kursi yang dipilih dengan gaya yang lebih menarik
+        tk.Label(jendela_tiket, text=f"Kursi Terpilih: {', '.join(map(str, kereta_terpilih.kursi_terpilih))}", font=("Helvetica", 12), fg="red").pack(padx=10, pady=5)
+
+        jendela_tiket.mainloop()
